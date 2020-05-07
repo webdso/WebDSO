@@ -1,0 +1,70 @@
+This directory keeps various HTML, JS and other files for visualizing DSO 
+(digital signal oscilloscope) output with a regular web browser. Source
+waveforms are retrieved by sending appropriate SCPI commands to DSO, received
+waveforms are plotted by gnuplot utility. 
+
+Main program is written with Perl, DSO communications are done through 
+vxi11_cmd utility or via direct sock connection (configurable). Waveforms 
+are plotted with gnuplot utility which generates plots as cryptic JS 
+files with builtin plot controls. The program was developed for Keysight 
+DSO6054x but could be ported to other compatible instruments. It runs under 
+Linux, tested under OpenSUSE 13.x, 15.x and should work under other 
+Linuxes too.
+
+The software provides following DSO controls:
+
+- Channels: 1-4 with the only channel visible at a time;
+- DC/AC input selection;
+- Plot start selection;
+- Wavepoints: 100, 250, 500, 1000 (DSO falls to hardware error with greater
+  no.wavepoints);
+- Time range selection;
+- Trigger source selection;
+- DSO IP address selection or built-in imitator plot (program starts in 
+  imitator mode).
+
+All of this has no much practical sense but could be used to quickly check
+some signal shape, verify DSO health or for other educational purposes.
+This software was developed out of pure curiosity and to kill some time.
+
+Manifest:
+
+  - instruments/ - vxi_11.cmd utility to talk to physical DSO, test and
+    demo SCPI's. This is modified version of vxi_11.cmd by Steve D. Sharples,
+    http://optics.eee.nottingham.ac.uk/vxi11/. Updated source code is available
+    upon request;
+    
+  - js/ - JS and image files;
+  
+  - modules/ - CPAN modules used for the project. These modules are here for
+    offline installations;
+  
+  - DSO_for_poor.sh - trivial shell script to send a command to DSO, read and
+    "enhance" the data returned and send them to gnuplot. The plot is shown on
+    xterm window; Used for gnuplot commands testing and concept demo;
+    
+  - dsoCommon.pm - perl modules for this project;
+  
+  - dsoPlotData.pl - server-side script to control DSO, load and plot waveform 
+    data. This script is launched via HTTP GET issued by simple.html page and
+    returns the plot as JS file. The former is executed by simple.html and 
+    nice plot is shown in your browser;
+    
+  - generator-16x16.png - fav.icon. Found somewhere in the development server;
+    
+  - README - this file.
+  
+  - simple.html - DSO visualization and control page. The only HTML page used
+    to work with DSO;
+    
+  - dso.apache.conf - Apache configuration file to make the stuff work under
+    Apache. Just for references;
+
+License:
+
+This software is licensed as Perl itself. All third-party materials 
+(including vxi-11.cmd and other external components) keep the licenses of 
+their authors. 
+
+18 Jan.2019 (initial release)
+06 May 2020 (current version)

@@ -1,0 +1,11 @@
+This directory is for various command sequencies and scripts for instruments testing.
+
+Possible use:
+
+  ../vxi11_cmd Your.Instrument.IP.Address < scriptName
+  
+or alternatively, typing the commands manually (example):
+
+  echo -e "*RST\n:SYST:ERR?" | ../vxi11_cmd Your.Instrument.IP.Address
+
+03 Feb.2016

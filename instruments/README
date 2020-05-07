@@ -1,0 +1,13 @@
+This directory contains various binaries to work with measurement devices.
+The stuff here (but not in sub-directories) is intended to be accessible from
+Web frontend.
+
+The files are:
+
+ README - this file;
+ vxi11_cmd - command line utility to access instruments. This is modified 
+	     version, source code is kept in instruments/src/ at
+	     http://site.gra48.ru gra48 project frontend;
+ tests - test scenarious and sequencies.
+
+24 Jan.2019
