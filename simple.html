@@ -123,8 +123,9 @@
   var dataRefresh = {			// Refresh plot control
     delay: 500,				// Default wait time between refreshes
     init: function() {
-      document.getElementById("refreshDelayId").value = null;
-      document.getElementById("refreshDelayId").placeholder = this.delay;
+//      document.getElementById("refreshDelayId").value = null;
+//      document.getElementById("refreshDelayId").placeholder = this.delay;
+      document.getElementById("refreshDelayId").value = this.delay;
     },
     set: function(newDelay) {
       if (! goodNumber(newDelay,0,99999,"Invalid delay value: "+newDelay,
@@ -141,9 +142,8 @@
     cs: null,				// Plot canvas,see "init()"
     init: function() {
       this.plotW = document.getElementById("plotWId");
-      this.plotH = document.getElementById("PlotHId");
-      this.plotW.value = null; this.plotW.placeholder = this.w;
-      this.plotH.value = null; this.plotH.placeholder = this.h;
+      this.plotH = document.getElementById("plotHId");
+      this.plotW.value = this.w; this.plotH.value = this.h;
       this.cs = document.getElementById("cs");
       this.cs.addEventListener("mousedown",this.mouseDn,true);
     },
@@ -451,7 +451,7 @@
   		   onBlur="plotSize.setW(this.value);"
   		   size="4" maxlength="4">
   &times;
-  <input type="text" id="PlotHId" value=""
+  <input type="text" id="plotHId" value=""
   		   title="Plot area heigth"
   		   onKeypress="isEnterKey(event) && plotSize.setH(this.value);"
   		   onBlur="plotSize.setH(this.value);"
