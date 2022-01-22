@@ -123,8 +123,6 @@
   var dataRefresh = {			// Refresh plot control
     delay: 500,				// Default wait time between refreshes
     init: function() {
-//      document.getElementById("refreshDelayId").value = null;
-//      document.getElementById("refreshDelayId").placeholder = this.delay;
       document.getElementById("refreshDelayId").value = this.delay;
     },
     set: function(newDelay) {
@@ -170,7 +168,7 @@
   }
   
   var dsoData = {			// DSO control data and methods
-    wavPoints: 250,
+    wavPoints: 250,			// Iintial no.points
     timRange: 1,			// Initial time range,msec
     chanSel: null,			// Channel selector
     couplig: 'AC',			// Channel input
@@ -525,7 +523,7 @@
 		    </select>
   </span>&nbsp;&nbsp;&nbsp;
   <span title="Channel that triggers the oscilloscope">
-  Trigger:&nbsp;<select id="trigId"
+  <B>Trigger:</B>&nbsp;<select id="trigId"
                  onChange="dsoData.trigSet(this.value)" 
                  onClick="dsoData.trigSet(this.value)">
                 <option value="1" selected>Ch.1</option>
@@ -536,6 +534,12 @@
                 </select>
   </span>
   <p><p>
+  <span title="Vertical range">
+  Vert.range:&nbsp;<input type="text" value="" size="5" maxlength="5">
+  </span>&nbsp;&nbsp;&nbsp;
+  <span title="Vertical scale">
+  Vert.scale:&nbsp;<input type="text" value="" size="5" maxlength="5">
+  </span>&nbsp;&nbsp;&nbsp;
   <span title="Data to plot source: imitator or real oscilloscope">
   Data source:&nbsp;<select id="dataSrcId" onChange="srcCtl.checkIP();">
     <option value="" selected>Imitator</option>
