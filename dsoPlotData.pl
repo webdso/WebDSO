@@ -19,6 +19,9 @@
 #		cnCl - channel and color, like "2,E69F00": acquire chan.2 and
 #		       plot is in #E69F00 color. This parameter has sense just
 #		       for "Plot", "Init" and "AutoS" modes;
+#		cn - cnannel number to operate, 1-based. Replaces "cnCl" parameter;
+#		color - color to use for plot, RGB hex code like "E69F00". 
+#			Replaces "cnCl" parameter;
 #		val - free parameter, anything calling page decides to send.
 #		
 # Dependencies: - vxi11_cmd utility - used to talk to the oscilloscope via
@@ -33,7 +36,7 @@
 #	   server mode: "nc -k -v -l 5025" and set instrument IP to 127.0.0.1
 # 
 # Version:	BETA
-# Release date:	26 Feb.2020
+# Release date:	19 Jan.2022
 # SVN version:	$Id$
 #
 
@@ -88,6 +91,8 @@ $plotW = $query{'w'} if (exists($query{'w'}));	# Plot width
 $plotH = $query{'h'} if (exists($query{'h'}));	# Height
 $wP = $query{'wP'} if (exists($query{'wP'}));	# WAVe:POINts
 ($chan,$color) = split(/,/,$query{'cnCl'}) if exists($query{'cnCl'});
+$chan = $query{'cn'} if (exists($query{'cn'}));
+$color = $query{'color'} if (exists($query{'color'}));
 					# -- Send out the header
 print $q->header(-type=>'text/javascript; charset=utf-8',
 		 -pragma=>'no-cache');
@@ -156,7 +161,8 @@ exit;
 #         
 sub RunPlot {
   my($ip,$xSize,$ySize,$pt,$cn,$col) = @_;
-  my($sec,$usec,$cmd);
+  my($sec,$usec,$cmd);			# Timing for imitator and command
+  my($timeout);				# DSO data reading timeout
   my($waveForm,$preamble,$range);	# Data,preamble,vert.range from DSO
   my($pFmt,$pTyp,$pPts,$pCnt,		# DSO preamble fields,see :WAV:PRE? in
      $pxInc,$pxOrig,$pxRef,		#  "DSO 6000 series Programmer Guide"
@@ -172,12 +178,14 @@ sub RunPlot {
 	   "set style fill solid 0.1 noborder; plot [] [] sin(x+$sec) title '$chan:sin(x+$sec)' with lines lc rgb '\#$col'";
     return( RunCmd("LANG='en_US.UTF-8' ".GNUPLOT." -e \"$cmd\"") );
   }
+  $timeout = DevIO($ip,":TIM:RANG?");	# Get acquisition time and adjust timeout
+  $timeout = ($timeout < SOCK_TMO) ? SOCK_TMO : $timeout+SOCK_TMO;	
   $cmd = ":WAV:SOUR CHAN$cn; ".
 #        ":WAV:POIN $pt; ". 
          ($pt > 1000? ":SYST:PREC ON;" : ":SYST:PREC OFF;")." :WAV:POIN $pt; ". 
-         ":SINGLE; :CHAN$cn:DISP 1; ".
+         ":SINGLE; :CHAN$cn:DISP 1; ".	# "SINGLE" launches data collection
          ":WAV:FORM ASC; :CHAN$cn:RANG?; :WAV:PRE?; :WAV:DATA?";
-  $waveForm = DevIO($ip,$cmd);		# Send $cmd to the instrument
+  $waveForm = DevIO($ip,$cmd,$timeout);	# Send $cmd to the instrument
   ($range,$preamble,$waveForm) = split(/;/,$waveForm,3); # Separate 3 replies from DSO
   PrintDebug("Ch.range: $range;\nPreamble: $preamble");
   ($pFmt,$pTyp,$pPts,$pCnt,$pxInc,$pxOrig,$pxRef,$pyInc,$pyOrig,$pyRef,$pDummy) =
@@ -215,15 +223,17 @@ sub DsoStatus {
   my($cmd,$replyString);		# Instrument's command and reply
   my(@dsoParams);			# DSO operational parameters
   my($tScale,$tUnit);			# Time range usable for humans
-  
+  					# -- DSO channel independent settings
   $cmd = ":WAV:SOUR?; :TIM:REF?; :WAV:POIN?; :TIM:RANG?; :TRIG:EDGE:SOUR?";
   $replyString = DevIO($ip,$cmd);	# Send command to the device
   @dsoParams = split(/[;\r\n]/,$replyString);	# Separate reply fields
   ($tScale,$tUnit) = TimeAbbr($dsoParams[3]);	# Conv.time range to convenient form
-  
-  $replyString = DevIO($ip,':'.$dsoParams[0].':COUP?'); # Send :CHANx:COUP? command
-  chomp($replyString);			        # Get rid of trailing \n
-  push(@dsoParams,$replyString);
+					# -- Channel specific queries
+  $cmd = ":$dsoParams[0]:COUP?; :$dsoParams[0]:RANG?; :$dsoParams[0]:SCAL?";
+  $replyString = DevIO($ip,$cmd); 	# Send channel queries
+#  chomp($replyString);			# Get rid of trailing \n
+#  push(@dsoParams,$replyString);
+  push(@dsoParams,split(/[;\r\n]/,$replyString)); # Separate replies and save'em
   PrintDebug("DSO status params parsed:".join(',',@dsoParams));
   $errMsg = defined($errMsg) ? $errMsg : '';
   $errMsg =~ s/'/&#39;/g; $errMsg =~ s/[\n\r]+$//; # Make err.message HTML-ready
@@ -236,6 +246,8 @@ sub DsoStatus {
          "           timeUnit: '".    $tUnit.       "',\n".
          "           trigEdgeSour: '".$dsoParams[4]."',\n".
          "           chanCoup: '".    $dsoParams[5]."',\n".
+         "           chanRang: '".    $dsoParams[6]."',\n".
+         "           chanScal: '".    $dsoParams[7]."',\n".
          "           errMsg: '".      $errMsg.      "',\n".
          "           timeCreated: '". localtime().  "',\n".
          "           wasSeen: '".     "".           "'}\n".
@@ -249,11 +261,12 @@ sub DsoStatus {
 #	   RunCmd() which utilizes VXI-11 protocol and SockIO() which talks to
 #	   the instrument through sockets (the former is obviously times faster).
 #
-# Synopsis:	[$out =] DevIO($ip,$command);
+# Synopsis:	[$out =] DevIO($ip,$command[,$timeout]);
 #
 sub DevIO {
-  my($ip,$cmd) = @_;
-  return( (DEV_CONN eq 'VXI11') ? RunCmd(VXI11." $ip",$cmd) : SockIO($ip,$cmd)
+  my($ip,$cmd,$tmout) = @_;
+  $tmout = SOCK_TMO if (! $tmout);
+  return( (DEV_CONN eq 'VXI11') ? RunCmd(VXI11." $ip",$cmd) : SockIO($ip,$cmd,$tmout)
 	);
 }					# --- DevIO ---
 
@@ -291,23 +304,23 @@ sub RunCmd {
 #	   by an example found in 26_863667_vector_prog.pdf, Signal 
 #	   Generators Programming Guide, p.145.
 #
-# Synopsis:	[$out =] SockIO($ip,$cmd);
+# Synopsis:	[$out =] SockIO($ip,$cmd,$timeout);
 #
 sub SockIO {
-  my($ip,$cmd) = @_;			# Grab the input
+  my($ip,$cmd,$timeout) = @_;		# Grab the input
   my($opc) = 0;				# Was *OPC command added to the $cmd?
   my($resp);				# Instrument's reply buffer
   my($sock) = new IO::Socket::INET(PeerAddr => $ip,
 				   PeerPort => SOCK_PORT,
 				   Proto => 'tcp',
-				   Timeout => SOCK_TMO,
+				   Timeout => $timeout,
 				  );
   ChkErr(($ip !~ m/\S/),"Instrument IP address is missing",
 	 "print dsoPlotData::MkJS('No instrument IP address given') ");
   ChkErr(! defined($sock),"Can't connect $ip:".SOCK_PORT." - $!", 
 	 "print dsoPlotData::MkJS('Cannot connect $ip:".SOCK_PORT." - $!') ");
   IO::Socket::Timeout->enable_timeouts_on($sock);
-  $sock->read_timeout(SOCK_TMO);
+  $sock->read_timeout($timeout);
   if ($cmd !~ m/(\?\s*;)|(\?\s*$)/) { 	# If no device read,add reading command
     $cmd .= "; *OPC?"; 
     $opc = 1;
@@ -316,7 +329,7 @@ sub SockIO {
   $resp = <$sock>;			# And read reply
   if (! defined($resp)) {
     $resp = ((0+$! == ETIMEDOUT) || (0+$! == EWOULDBLOCK)) ?
-            'Timeout error: no reply from oscilloscope in '.SOCK_TMO.' sec.' :
+            "Timeout error: no reply from oscilloscope in $timeout sec." :
             "Oscilloscope read error - $!";
     ChkErr(1,$resp,"print dsoPlotData::MkJS(\"$resp\")");
   }
