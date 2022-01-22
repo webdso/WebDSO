@@ -170,8 +170,13 @@
   var dsoData = {			// DSO control data and methods
     wavPoints: 250,			// Iintial no.points
     timRange: 1,			// Initial time range,msec
+    chanCols: ["E69F00","56B4E9",	// RGB channels colors
+               "9400D3","009E73"],
+    defCol: "4f4f4f",			// Default color: ext.triggger,etc. 
     chanSel: null,			// Channel selector
     couplig: 'AC',			// Channel input
+    chanRang: null,			// Channel vert.range
+    chanScal: null,			// Channel vert.scal (linked with range)
     plotOrig: null,			// Plot start selector
     trig: 1,				// Trigger channel or ext.trigger
     stat: null,				// DSO status,see dsoPlotData.pl DsoStatus()
@@ -183,12 +188,13 @@
       this.chanSel = document.getElementById("chanSelId");
       this.chanSel.selectedIndex = "0";			  // Select 1st channel
       this.shoCnColor('chanColorId',this.chanSel.value);  // Display chan.color
+      this.shoCnColor('trigColorId',this.trig);  	  // Color trigger label
       this.coupling = document.getElementById("chanCoupId").value;
       document.getElementById("trigId").selectedIndex = "0"; // Trig.by 1st chan.
     },
     coupSet: function(coup) {		// Set channel's coupling
       this.coupling = coup
-      runCmd("Coupling","val",coup,"cnCl",this.chanSel.value);
+      runCmd("Coupling","val",coup,"cn",this.chanSel.value);
     },					// -- coupSet --
     pointsSet: function(newPts) {
       if (! goodNumber(newPts,100,10000,"Invalid no.points in the plot: "+newPts,
@@ -206,13 +212,16 @@
 // alert("timRangeSet: "+val+","+unit+","+this.timRange);
       runCmd("TimRange",'val',this.timRange);      
     },
-    shoCnColor: function(areaId,colorCode) {
-      var color = colorCode.replace(/^\d+,/,'');  // Remove chan# in picklist value
+    shoCnColor: function(areaId,chanNo) {
+      var color;
+      if ((chanNo > 0) && 
+          (chanNo <= this.chanCols.length)) { color = this.chanCols[chanNo-1]; }
+      else { color = this.defCol; }
       document.getElementById(areaId).style.color = '#'+color;
     },					// --- shoCnColor ---
     trigSet: function(trgChan) {	// Set trigger channel
       this.trig = trgChan;		// Save desired ch#
-      runCmd("TrigCh","val",this.trig,"cnCl",this.chanSel.value);
+      runCmd("TrigCh","val",this.trig,"cn",this.chanSel.value);
     },					// --- trigSet ---
     showStat: function(stat) {		// Receive and show DSO parameters
       var tNum;				// Intermediate number
@@ -233,6 +242,11 @@
       this.trig = (this.stat.trigEdgeSour === "EXT") ? "E" :
 						       this.stat.trigEdgeSour.replace(/CHAN/,'');
       document.getElementById("trigId").value = this.trig;
+      this.shoCnColor('trigColorId',this.trig);
+      this.chanRang = this.stat.chanRang;
+      document.getElementById("chanRangId").value = this.chanRang;
+      this.chanScal = this.stat.chanScal;
+      document.getElementById("chanScalId").value = this.chanScal;
       statMsg(this.stat.errMsg);		// Display error or clear err.area
       this.stat.wasSeen = (new Date()).toLocaleString();	// Mark data as processed
     }					// --- showStat() ---
@@ -297,17 +311,18 @@
    * calls "loadJS()" and passes it a callback and hence could be replaced by
    * direct call of "loadJS()".
    *
-   * NOTE: dsoData.shoCnColor() call is just to color selected channel indicator
-   *	   next to channel selector. This call is needed to workaround the bug in
-   *       old Firefox browser in the office: it sets picklist value when
-   *	   hovering over options list - this is convenient(!) but does not
+   * NOTE: dsoData.shoCnColor() call here is just to color selected channel 
+   *	   indicator next to channel selector. This call is needed to workaround 
+   *	   the bug in old Firefox browser in the office: it sets picklist value
+   *	   when hovering over options list - this is convenient(!) but does not
    *	   update color indicator (which is confusing). This call is not needed
    *       for modern browsers and could be witdrawn.
    */
   function dataLoop() {
     loadJS("dsoPlotData.pl?ip="+srcCtl.dsoIP+ 	// Returns JS code to plot data
 			  "&mode=Plot&w="+plotSize.w+"&h="+plotSize.h+
-			  "&cnCl="+dsoData.chanSel.value+
+			  "&cn="+dsoData.chanSel.value+
+			  "&color="+dsoData.chanCols[dsoData.chanSel.value-1]+
 			  "&wP="+dsoData.wavPoints,
            function() { 		// Run it when desired code loaded
              clearCanvas();		// Cleanup current plot
@@ -466,10 +481,14 @@
   <span title="Oscilloscope channel to display">
   <span id="chanColorId"><B>Channel:</B>&nbsp;</span><select id="chanSelId"
                  onChange="dsoData.shoCnColor('chanColorId',this.value);">
-    <option value="1,E69F00" selected>&nbsp;1&nbsp;</option>
+    <option value="1" selected>&nbsp;1&nbsp;</option>
+    <option value="2">&nbsp;2&nbsp;</option>
+    <option value="3">&nbsp;3&nbsp;</option>
+    <option value="4">&nbsp;4&nbsp;</option>
+<!--    <option value="1,E69F00" selected>&nbsp;1&nbsp;</option>
     <option value="2,56B4E9">&nbsp;2&nbsp;</option>
     <option value="3,9400D3">&nbsp;3&nbsp;</option>
-    <option value="4,009E73">&nbsp;4&nbsp;</option>
+    <option value="4,009E73">&nbsp;4&nbsp;</option> -->
     </select>
   </span>&nbsp;&nbsp;&nbsp;
   <span title="Oscilloscope input coupling: &cong; - AC/DC or &asymp; - just AC">  
@@ -522,10 +541,10 @@
 		    <option value="1">sec</option>
 		    </select>
   </span>&nbsp;&nbsp;&nbsp;
-  <span title="Channel that triggers the oscilloscope">
+  <span id="trigColorId" title="Channel that triggers the oscilloscope">
   <B>Trigger:</B>&nbsp;<select id="trigId"
-                 onChange="dsoData.trigSet(this.value)" 
-                 onClick="dsoData.trigSet(this.value)">
+                 onChange="dsoData.trigSet(this.value); dsoData.shoCnColor('trigColorId',this.value)"
+                 onClick="dsoData.trigSet(this.value); dsoData.shoCnColor('trigColorId',this.value)">
                 <option value="1" selected>Ch.1</option>
                 <option value="2">Ch.2</option>
                 <option value="3">Ch.3</option>
@@ -534,11 +553,11 @@
                 </select>
   </span>
   <p><p>
-  <span title="Vertical range">
-  Vert.range:&nbsp;<input type="text" value="" size="5" maxlength="5">
+  <span title="Vertical range, Volts">
+  Vert.range:&nbsp;<input id="chanRangId" type="text" value="" size="5" maxlength="5">&nbsp;V
   </span>&nbsp;&nbsp;&nbsp;
-  <span title="Vertical scale">
-  Vert.scale:&nbsp;<input type="text" value="" size="5" maxlength="5">
+  <span title="Vertical scale, Volts per division">
+  Vert.scale:&nbsp;<input id="chanScalId"  type="text" value="" size="5" maxlength="5">&nbsp;V/div
   </span>&nbsp;&nbsp;&nbsp;
   <span title="Data to plot source: imitator or real oscilloscope">
   Data source:&nbsp;<select id="dataSrcId" onChange="srcCtl.checkIP();">
@@ -554,8 +573,8 @@
   </span>
   <p><p>
   <button id="autoScId"
-   onClick="runCmd('AutoS','cnCl',dsoData.chanSel.value,'val',dsoData.trig); dsoData.plotOrig.value='Center'; this.blur()">Autoscale</button>
-  <button id="initInstId" onClick="runCmd('Init','cnCl',dsoData.chanSel.value,'timRang',dsoData.timRange); this.blur()">Init</button>
+   onClick="runCmd('AutoS','cn',dsoData.chanSel.value,'val',dsoData.trig); dsoData.plotOrig.value='Center'; this.blur()">Autoscale</button>
+  <button id="initInstId" onClick="runCmd('Init','cn',dsoData.chanSel.value,'timRang',dsoData.timRange); this.blur()">Init</button>
   <button id="stopDtLoopId" onclick="switchDataLoop(0); this.blur()">Stop</button>
   <button id="singleDtLoopId" onclick="switchDataLoop(1); this.blur()" disabled>Step</button>
   <p><p>
