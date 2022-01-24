@@ -209,8 +209,19 @@
     },
     timRangeSet: function(val,unit) {	// Set time range (:TIM:RANG)
       this.timRange = val * unit;
+      // FIXME: Verify time range, use goodNumber() function
 // alert("timRangeSet: "+val+","+unit+","+this.timRange);
       runCmd("TimRange",'val',this.timRange);      
+    },
+    vRangeSet: function(vRang,chanNo) {	// Set vertical range (:CHANn:RANG V)
+      // FIXME: Verify vert.range, use goodNumber() function
+      this.chanRang = vRang;
+      runCmd("VertRange",'val',this.chanRang,"cn",chanNo);
+    },
+    vScaleSet: function(vScal,chanNo) {	// Set vertical range (:CHANn:SCAL Vdiv)
+      // FIXME: Verify vert.scale, use goodNumber() function
+      this.chanScal = vScal;
+      runCmd("VertScale",'val',this.chanScal,"cn",chanNo);
     },
     shoCnColor: function(areaId,chanNo) {
       var color;
@@ -554,10 +565,18 @@
   </span>
   <p><p>
   <span title="Vertical range, Volts">
-  Vert.range:&nbsp;<input id="chanRangId" type="text" value="" size="5" maxlength="5">&nbsp;V
+  Vert.range:&nbsp;<input id="chanRangId" type="text" value="" 
+		    onKeypress="isEnterKey(event) &&
+			        dsoData.vRangeSet(this.value,dsoData.chanSel.value);"
+		    onBlur="dsoData.vRangeSet(this.value,dsoData.chanSel.value);"
+		    size="5" maxlength="5">&nbsp;V
   </span>&nbsp;&nbsp;&nbsp;
   <span title="Vertical scale, Volts per division">
-  Vert.scale:&nbsp;<input id="chanScalId"  type="text" value="" size="5" maxlength="5">&nbsp;V/div
+  Vert.scale:&nbsp;<input id="chanScalId"  type="text" value="" 
+		    onKeypress="isEnterKey(event) &&
+			        dsoData.vScaleSet(this.value,dsoData.chanSel.value);"
+		    onBlur="dsoData.vScaleSet(this.value,dsoData.chanSel.value);"
+		    size="5" maxlength="5">&nbsp;V/div
   </span>&nbsp;&nbsp;&nbsp;
   <span title="Data to plot source: imitator or real oscilloscope">
   Data source:&nbsp;<select id="dataSrcId" onChange="srcCtl.checkIP();">

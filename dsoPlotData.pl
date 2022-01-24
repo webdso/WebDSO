@@ -117,6 +117,10 @@ if ($query{'mode'} eq 'Plot') {
   elsif ($dsoReply eq "RIGH") { $cmd = ":TIM:POS -".($query{'val'} / 10); }
   else { $cmd = ":TIM:POS 0"; } 
   $dsoReply = DsoStatus($ip,DevIO($ip,$cmd));	# Correct X position
+} elsif ($query{'mode'} eq 'VertRange') {	# :CHANn:RANG - vert.range
+  $dsoReply = DsoStatus($ip,DevIO($ip,":CHAN$chan:RANG ".$query{'val'}."V"));
+} elsif ($query{'mode'} eq 'VertScale') {	# :CHANn:SCAL - vert.scale
+  $dsoReply = DsoStatus($ip,DevIO($ip,":CHAN$chan:SCAL ".$query{'val'}."V"));
 } elsif ($query{'mode'} eq 'TrigCh') {	# Set trigger :TRIG:EDGE:SOUR
   $dsoReply = DsoStatus($ip,DevIO($ip,":TRIG:EDGE:SOUR ".TrgSource($query{'val'},$chan)));
 } elsif ($query{'mode'} eq 'Init') {
