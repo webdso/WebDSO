@@ -255,9 +255,9 @@
       document.getElementById("trigId").value = this.trig;
       this.shoCnColor('trigColorId',this.trig);
       this.chanRang = this.stat.chanRang;
-      document.getElementById("chanRangId").value = this.chanRang;
+      document.getElementById("chanRangId").value = parseFloat(this.chanRang);
       this.chanScal = this.stat.chanScal;
-      document.getElementById("chanScalId").value = this.chanScal;
+      document.getElementById("chanScalId").value = parseFloat(this.chanScal);
       statMsg(this.stat.errMsg);		// Display error or clear err.area
       this.stat.wasSeen = (new Date()).toLocaleString();	// Mark data as processed
     }					// --- showStat() ---
@@ -569,14 +569,14 @@
 		    onKeypress="isEnterKey(event) &&
 			        dsoData.vRangeSet(this.value,dsoData.chanSel.value);"
 		    onBlur="dsoData.vRangeSet(this.value,dsoData.chanSel.value);"
-		    size="5" maxlength="5">&nbsp;V
+		    size="6" maxlength="6">&nbsp;V
   </span>&nbsp;&nbsp;&nbsp;
   <span title="Vertical scale, Volts per division">
   Vert.scale:&nbsp;<input id="chanScalId"  type="text" value="" 
 		    onKeypress="isEnterKey(event) &&
 			        dsoData.vScaleSet(this.value,dsoData.chanSel.value);"
 		    onBlur="dsoData.vScaleSet(this.value,dsoData.chanSel.value);"
-		    size="5" maxlength="5">&nbsp;V/div
+		    size="6" maxlength="6">&nbsp;V/div
   </span>&nbsp;&nbsp;&nbsp;
   <span title="Data to plot source: imitator or real oscilloscope">
   Data source:&nbsp;<select id="dataSrcId" onChange="srcCtl.checkIP();">
