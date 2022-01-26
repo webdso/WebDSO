@@ -36,13 +36,14 @@
 #	   server mode: "nc -k -v -l 5025" and set instrument IP to 127.0.0.1
 # 
 # Version:	BETA
-# Release date:	19 Jan.2022
+# Release date:	22 Jan.2022
 # SVN version:	$Id$
 #
 
 #
 # Modification history (complements SVN log):
 # BETA - 30 Jan.2019: Initial release
+# 1.0 - 26 Jan.2022: Latest release
 #
 
 package dsoPlotData;
@@ -111,7 +112,7 @@ if ($query{'mode'} eq 'Plot') {
 } elsif ($query{'mode'} eq 'Coupling') {	# :CHANn:COUP - input AC-AC/DC
   $dsoReply = DsoStatus($ip,DevIO($ip,":CHAN$chan:COUP ".($query{'val'} eq 'AC'? 'AC' : 'DC')));
 } elsif ($query{'mode'} eq 'TimRange') {	# :TIM:RANG - set horiz.time
-  $dsoReply = DevIO($ip,":TIM:RANG ".$query{'val'}."; :SINGLE; :TIM:REF?"); # Plot start
+  $dsoReply = DevIO($ip,":TIM:RANG ".$query{'val'}."; :TIM:REF?"); # Plot start
   chomp($dsoReply);			# Get rid of \n added by DSO
   if ($dsoReply eq "LEFT") { $cmd = ":TIM:POS ".($query{'val'} / 10); }
   elsif ($dsoReply eq "RIGH") { $cmd = ":TIM:POS -".($query{'val'} / 10); }
@@ -183,7 +184,7 @@ sub RunPlot {
     return( RunCmd("LANG='en_US.UTF-8' ".GNUPLOT." -e \"$cmd\"") );
   }
   $timeout = DevIO($ip,":TIM:RANG?");	# Get acquisition time and adjust timeout
-  $timeout = ($timeout < SOCK_TMO) ? SOCK_TMO : $timeout+SOCK_TMO;	
+  $timeout = int($timeout+SOCK_TMO);	
   $cmd = ":WAV:SOUR CHAN$cn; ".
 #        ":WAV:POIN $pt; ". 
          ($pt > 1000? ":SYST:PREC ON;" : ":SYST:PREC OFF;")." :WAV:POIN $pt; ". 
@@ -319,6 +320,7 @@ sub SockIO {
 				   Proto => 'tcp',
 				   Timeout => $timeout,
 				  );
+  PrintDebug("SockIO: $ip,$cmd,$timeout");
   ChkErr(($ip !~ m/\S/),"Instrument IP address is missing",
 	 "print dsoPlotData::MkJS('No instrument IP address given') ");
   ChkErr(! defined($sock),"Can't connect $ip:".SOCK_PORT." - $!", 
