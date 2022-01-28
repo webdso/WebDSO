@@ -16,12 +16,8 @@
 #		mode - Plot, Init, AutoS, TimRange... e mucho mas...;
 #		plotW, plotH - plot afrea width and height to send to gnuplot;
 #		wP - waveform points to get from DSO;
-#		cnCl - channel and color, like "2,E69F00": acquire chan.2 and
-#		       plot is in #E69F00 color. This parameter has sense just
-#		       for "Plot", "Init" and "AutoS" modes;
-#		cn - cnannel number to operate, 1-based. Replaces "cnCl" parameter;
-#		color - color to use for plot, RGB hex code like "E69F00". 
-#			Replaces "cnCl" parameter;
+#		cn - cnannel number to operate, 1-based;
+#		color - color to use for plot, RGB hex code like "E69F00";
 #		val - free parameter, anything calling page decides to send.
 #		
 # Dependencies: - vxi11_cmd utility - used to talk to the oscilloscope via
@@ -91,7 +87,6 @@ $ip = $query{'ip'} if (exists($query{'ip'}));
 $plotW = $query{'w'} if (exists($query{'w'}));	# Plot width
 $plotH = $query{'h'} if (exists($query{'h'}));	# Height
 $wP = $query{'wP'} if (exists($query{'wP'}));	# WAVe:POINts
-($chan,$color) = split(/,/,$query{'cnCl'}) if exists($query{'cnCl'});
 $chan = $query{'cn'} if (exists($query{'cn'}));
 $color = $query{'color'} if (exists($query{'color'}));
 					# -- Send out the header
