@@ -330,7 +330,7 @@ sub SockIO {
   ChkErr(($ip !~ m/\S/),"Instrument IP address is missing",
 	 "print dsoPlotData::MkJS('No instrument IP address given') ");
   ChkErr(! defined($sock),"Can't connect $ip:".SOCK_PORT." - $!", 
-	 "print dsoPlotData::MkJS('Cannot connect $ip:".SOCK_PORT." - $!') ");
+	 "print dsoPlotData::MkJS('Cannot connect $ip, port ".SOCK_PORT.": $!') ");
   IO::Socket::Timeout->enable_timeouts_on($sock);
   $sock->read_timeout($timeout);
   if ($cmd !~ m/(\?\s*;)|(\?\s*$)/) { 	# If no device read,add reading command
