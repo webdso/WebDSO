@@ -208,31 +208,42 @@ sub RunPlot {
 #
 # DsoStatus - send several queries to the instrument to get its operational
 #	      parameters. Arrange replies as JS function which returns device
-#	      info as an object. It is assumed a calling HTML page will assign
-#	      received object to a local variable and use DSO info as needed.
-#	      Optional $errmsg represents device's error message and - if 
-#	      present - is supposed to be displayed on the screen.
+#	      info as an object. It is assumed a calling HTML page will run this
+#	      function and assign returned object to a local variable and then 
+#	      will use DSO info as needed. Optional $errmsg represents device's 
+#	      error message and - if present - is supposed to be displayed on the 
+#	      screen.
 #
 # Synopsis:	$statusJs = DsoStatus($ip,[$errMsg]);
 #
-# NOTE:       The names of the fields in generated object must be agreed with
+# NOTE:       The names of the fields in generated JS object must be agreed with
 #	      those used in the calling HTML.
+# NOTE 2:     For some unknown reasons, DSO takes no less than horiz.time to run
+#	      :WAV:POIN? command(!). I.e. if :TIM:RANG is 5 sec, :WAV:POIN?
+#	      command takes 5 sec to run (is it nice or what?). Because of this,
+#	      we ask :TIM:RANG? first and then compute timeout for next commands. 
+#	      Perhaps, better solution would be to get and save :TIM:RANG? first,
+#	      then drop it to something short (1 msec or so), then get :WAV:POIN?
+#	      value and finally return :TIM:RANG to the original setting.
 #
 sub DsoStatus {
   my($ip,$errMsg) = @_;			# Grab device's IP and error
   my($cmd,$replyString);		# Instrument's command and reply
+  my($timRange);			# DSO current time range (:TIM:RANG?)
+  my($timeout);				# Timeout for reading DSO status
   my(@dsoParams);			# DSO operational parameters
   my($tScale,$tUnit);			# Time range usable for humans
+  					# -- Get DSP time range and set timeout
+  $timRange = DevIO($ip,":TIM:RANG?");	# Get data acquisition time
+  $timeout = int($timRange+SOCK_TMO);	# Adjust timeout
   					# -- DSO channel independent settings
-  $cmd = ":WAV:SOUR?; :TIM:REF?; :WAV:POIN?; :TIM:RANG?; :TRIG:EDGE:SOUR?";
-  $replyString = DevIO($ip,$cmd);	# Send command to the device
+  $cmd = ":WAV:SOUR?; :TIM:REF?; :WAV:POIN?; :TRIG:EDGE:SOUR?";
+  $replyString = DevIO($ip,$cmd,$timeout);	# Send command to the device
   @dsoParams = split(/[;\r\n]/,$replyString);	# Separate reply fields
   ($tScale,$tUnit) = TimeAbbr($dsoParams[3]);	# Conv.time range to convenient form
 					# -- Channel specific queries
   $cmd = ":$dsoParams[0]:COUP?; :$dsoParams[0]:RANG?; :$dsoParams[0]:SCAL?";
   $replyString = DevIO($ip,$cmd); 	# Send channel queries
-#  chomp($replyString);			# Get rid of trailing \n
-#  push(@dsoParams,$replyString);
   push(@dsoParams,split(/[;\r\n]/,$replyString)); # Separate replies and save'em
   PrintDebug("DSO status params parsed:".join(',',@dsoParams));
   $errMsg = defined($errMsg) ? $errMsg : '';
@@ -241,13 +252,13 @@ sub DsoStatus {
          "  return { wavSour: '".     $dsoParams[0]."',\n".
          "           timRef: '".      $dsoParams[1]."',\n".
          "           wavPoin: '".     $dsoParams[2]."',\n".
-         "           timRang: '".     $dsoParams[3]."',\n".
+         "           timRang: '".     $timRange.    "',\n".
          "           timeScale: '".   $tScale.      "',\n".
          "           timeUnit: '".    $tUnit.       "',\n".
-         "           trigEdgeSour: '".$dsoParams[4]."',\n".
-         "           chanCoup: '".    $dsoParams[5]."',\n".
-         "           chanRang: '".    $dsoParams[6]."',\n".
-         "           chanScal: '".    $dsoParams[7]."',\n".
+         "           trigEdgeSour: '".$dsoParams[3]."',\n".
+         "           chanCoup: '".    $dsoParams[4]."',\n".
+         "           chanRang: '".    $dsoParams[5]."',\n".
+         "           chanScal: '".    $dsoParams[6]."',\n".
          "           errMsg: '".      $errMsg.      "',\n".
          "           timeCreated: '". localtime().  "',\n".
          "           wasSeen: '".     "".           "'}\n".
