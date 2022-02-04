@@ -337,6 +337,7 @@
 			  "&wP="+dsoData.wavPoints,
            function() { 		// Run it when desired code loaded
              clearCanvas();		// Cleanup current plot
+             statMsg("");		// Cleanup message area
              dsoData.shoCnColor('chanColorId',dsoData.chanSel.value);
              cs(); 			// Draw new one
              if (dataLoopRun) dataLoopId = setTimeout(dataLoop,dataRefresh.delay);
@@ -353,6 +354,7 @@
       clearTimeout(dataLoopId);		// Stop by resetting next loop timeout
       dataLoopRun = 0;			// Reset activity flag
     } else {				// .. Stopped
+      if (single) statMsg("Single run...");
       dataLoop();			// Run it
       dataLoopRun = single? 0 : 1;	// If single run - don't keep running
     }
