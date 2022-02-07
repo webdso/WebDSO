@@ -13,7 +13,7 @@
 #
 # Arguments:	ip - instrument's IP address or null (this causes gnuplot to
 #		     plot some predefined function);
-#		mode - Plot, Init, AutoS, TimRange... e mucho mas...;
+#		mode - Plot, Reset, AutoS, TimRange... e mucho mas...;
 #		plotW, plotH - plot afrea width and height to send to gnuplot;
 #		wP - waveform points to get from DSO;
 #		cn - cnannel number to operate, 1-based;
@@ -32,7 +32,7 @@
 #	   server mode: "nc -k -v -l 5025" and set instrument IP to 127.0.0.1
 # 
 # Version:	BETA
-# Release date:	22 Jan.2022
+# Release date:	7 Feb.2022
 # SVN version:	$Id$
 #
 
@@ -124,6 +124,9 @@ if ($query{'mode'} eq 'Plot') {
 	 ":CHAN$chan:PROB 10; :CHAN$chan:COUP AC; :CHAN$chan:RANG 16; :CHAN$chan:OFFS 0; ". # NB: Vert.sens.here
 	 ":TIM:MODE MAIN; :TIM:REF LEFT; :TIM:POS 0; :TIM:RANG ".$query{'timRang'}.'; '.
 	 ":TRIG:MODE EDGE; :TRIG:EDGE:SOUR CHAN$chan; :TRIG:EDGE:SLOP EITH";
+  $dsoReply = DsoStatus($ip,DevIO($ip,$cmd));
+} elsif ($query{'mode'} eq 'Reset') {
+  $cmd = "*RST";
   $dsoReply = DsoStatus($ip,DevIO($ip,$cmd));
 } else {
   ChkErr(1,'Invalid mode "'.$query{'mode'}.'", check script parameters');
