@@ -255,9 +255,9 @@
       document.getElementById("trigId").value = this.trig;
       this.shoCnColor('trigColorId',this.trig);
       this.chanRang = this.stat.chanRang;
-      document.getElementById("chanRangId").value = parseFloat(this.chanRang);
+      document.getElementById("chanRangId").value = parseFloat(this.chanRang).toFixed(2);
       this.chanScal = this.stat.chanScal;
-      document.getElementById("chanScalId").value = parseFloat(this.chanScal);
+      document.getElementById("chanScalId").value = parseFloat(this.chanScal).toFixed(2);
       statMsg(this.stat.errMsg);		// Display error or clear err.area
       this.stat.wasSeen = (new Date()).toLocaleString();	// Mark data as processed
     }					// --- showStat() ---
