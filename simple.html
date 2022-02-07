@@ -593,11 +593,15 @@
 			    onBlur="srcCtl.checkIP();">
   </span>
   <p><p>
-  <button id="autoScId"
+  <button id="autoScId" title="Run autoscale (:AUT CHANn) command"
    onClick="runCmd('AutoS','cn',dsoData.chanSel.value,'val',dsoData.trig); dsoData.plotOrig.value='Center'; this.blur()">Autoscale</button>
-  <button id="initInstId" onClick="runCmd('Init','cn',dsoData.chanSel.value,'timRang',dsoData.timRange); this.blur()">Init</button>
-  <button id="stopDtLoopId" onclick="switchDataLoop(0); this.blur()">Stop</button>
-  <button id="singleDtLoopId" onclick="switchDataLoop(1); this.blur()" disabled>Step</button>
+  <!--button id="initInstId" onClick="runCmd('Init','cn',dsoData.chanSel.value,'timRang',dsoData.timRange); this.blur()">Init</button-->
+  <button id="initInstId" title="Reset (*RST) the instrument"
+   onClick="runCmd('Reset','cn',dsoData.chanSel.value,'timRang',dsoData.timRange); this.blur()">Reset</button>
+  <button id="stopDtLoopId" title="Run/Stop the instrument"
+   onclick="switchDataLoop(0); this.blur()">Stop</button>
+  <button id="singleDtLoopId" title="Single run the instrument (:SINGLE command)"
+   onclick="switchDataLoop(1); this.blur()" disabled>Step</button>
   <p><p>
   <div id="statAreaId" 
    style="font-family: monospace; color: #EF0000; font-weight: bold;"></div>
