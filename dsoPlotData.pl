@@ -182,6 +182,7 @@ sub RunPlot {
     return( RunCmd("LANG='en_US.UTF-8' ".GNUPLOT." -e \"$cmd\"") );
   }
   $timeout = DevIO($ip,":TIM:RANG?");	# Get acquisition time and adjust timeout
+  chomp($timRange);
   $timeout = int($timeout+SOCK_TMO);	
   $cmd = ":WAV:SOUR CHAN$cn; ".
 #        ":WAV:POIN $pt; ". 
@@ -238,12 +239,14 @@ sub DsoStatus {
   my($tScale,$tUnit);			# Time range usable for humans
   					# -- Get DSP time range and set timeout
   $timRange = DevIO($ip,":TIM:RANG?");	# Get data acquisition time
+  chomp($timRange);
+  PrintDebug("DSO time range:".$timRange);
   $timeout = int($timRange+SOCK_TMO);	# Adjust timeout
   					# -- DSO channel independent settings
   $cmd = ":WAV:SOUR?; :TIM:REF?; :WAV:POIN?; :TRIG:EDGE:SOUR?";
   $replyString = DevIO($ip,$cmd,$timeout);	# Send command to the device
   @dsoParams = split(/[;\r\n]/,$replyString);	# Separate reply fields
-  ($tScale,$tUnit) = TimeAbbr($dsoParams[3]);	# Conv.time range to convenient form
+  ($tScale,$tUnit) = TimeAbbr($timRange);	# Conv.time range to convenient form
 					# -- Channel specific queries
   $cmd = ":$dsoParams[0]:COUP?; :$dsoParams[0]:RANG?; :$dsoParams[0]:SCAL?";
   $replyString = DevIO($ip,$cmd); 	# Send channel queries
