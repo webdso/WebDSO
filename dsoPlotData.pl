@@ -125,9 +125,10 @@ if ($query{'mode'} eq 'Plot') {
 	 ":TIM:MODE MAIN; :TIM:REF LEFT; :TIM:POS 0; :TIM:RANG ".$query{'timRang'}.'; '.
 	 ":TRIG:MODE EDGE; :TRIG:EDGE:SOUR CHAN$chan; :TRIG:EDGE:SLOP EITH";
   $dsoReply = DsoStatus($ip,DevIO($ip,$cmd));
-} elsif ($query{'mode'} eq 'Reset') {
-  $cmd = "*RST";
-  $dsoReply = DsoStatus($ip,DevIO($ip,$cmd));
+} elsif ($query{'mode'} eq 'Reset') {		# *RST the scope
+  $dsoReply = DsoStatus($ip,DevIO($ip,"*RST"));
+} elsif ($query{'mode'} eq 'statReq') {		# Status request, return scope settings
+  $dsoReply = DsoStatus($ip,'');
 } else {
   ChkErr(1,'Invalid mode "'.$query{'mode'}.'", check script parameters');
 }
@@ -212,11 +213,10 @@ sub RunPlot {
 #
 # DsoStatus - send several queries to the instrument to get its operational
 #	      parameters. Arrange replies as JS function which returns device
-#	      info as an object. It is assumed a calling HTML page will run this
-#	      function and assign returned object to a local variable and then 
-#	      will use DSO info as needed. Optional $errmsg represents device's 
-#	      error message and - if present - is supposed to be displayed on the 
-#	      screen.
+#	      info as an object. It is assumed a calling HTML page runs this
+#	      function, parses returned object to local variables and then 
+#	      uses DSO settings as needed. Optional $errMsg represents device's 
+#	      error message and - if present - is displayed on the screen.
 #
 # Synopsis:	$statusJs = DsoStatus($ip,[$errMsg]);
 #
@@ -242,12 +242,12 @@ sub DsoStatus {
   chomp($timRange);
   PrintDebug("DSO time range:".$timRange);
   $timeout = int($timRange+SOCK_TMO);	# Adjust timeout
-  					# -- DSO channel independent settings
+  					# -- Get channel# and common settings
   $cmd = ":WAV:SOUR?; :TIM:REF?; :WAV:POIN?; :TRIG:EDGE:SOUR?";
   $replyString = DevIO($ip,$cmd,$timeout);	# Send command to the device
   @dsoParams = split(/[;\r\n]/,$replyString);	# Separate reply fields
   ($tScale,$tUnit) = TimeAbbr($timRange);	# Conv.time range to convenient form
-					# -- Channel specific queries
+					# -- Channel specific: coupling, vert.range
   $cmd = ":$dsoParams[0]:COUP?; :$dsoParams[0]:RANG?; :$dsoParams[0]:SCAL?";
   $replyString = DevIO($ip,$cmd); 	# Send channel queries
   push(@dsoParams,split(/[;\r\n]/,$replyString)); # Separate replies and save'em

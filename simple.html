@@ -597,10 +597,12 @@
    onClick="runCmd('AutoS','cn',dsoData.chanSel.value,'val',dsoData.trig); dsoData.plotOrig.value='Center'; this.blur()">Autoscale</button>
   <!--button id="initInstId" onClick="runCmd('Init','cn',dsoData.chanSel.value,'timRang',dsoData.timRange); this.blur()">Init</button-->
   <button id="initInstId" title="Reset (*RST) the instrument"
-   onClick="runCmd('Reset','cn',dsoData.chanSel.value,'timRang',dsoData.timRange); this.blur()">Reset</button>
+   onClick="runCmd('Reset'); this.blur()">Reset</button>
+  <button id="statReqId" title="Get instrument settings"
+   onClick="runCmd('statReq'); this.blur()">Settings</button>
   <button id="stopDtLoopId" title="Run/Stop the instrument"
    onclick="switchDataLoop(0); this.blur()">Stop</button>
-  <button id="singleDtLoopId" title="Single run the instrument (:SINGLE command)"
+  <button id="singleDtLoopId" title="Run the instrument once (:SINGLE command)"
    onclick="switchDataLoop(1); this.blur()" disabled>Step</button>
   <p><p>
   <div id="statAreaId" 
