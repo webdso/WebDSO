@@ -94,7 +94,7 @@
   var dataLoopRun = 1;			// Data gathering status: 1 - running
   var lastScript = null;		// Last loaded JS script
 
-  var srcCtl = {			// Signal source selection object
+  var srcCtl = {			// Data source selection object
     dsoIP: '',				// DSO IP address
     dataSrc: null,			// Signal source selector,see "init()"
     dataIp: null,			// Device IP address,see "init()"
@@ -102,13 +102,14 @@
       statMsg("");			// Reset error message first
       if (this.dataSrc.value == "dso") {
 	if (! /^\d+\.\d+\.\d+\.\d+$/.test(this.dataIp.value)) {  // Bad IP?
-	  this.dataSrc.value = "";	// Reset back to imitator
+	  this.dataSrc.selectedIndex = "0";		// Reset back to imitator
 	  document.title = "DSO demo";
 	  return(goodNumber('NaN',0,0,"Incorrect IP addr: "+this.dataIp.value,
 			    this.dataIp));
 	}
 	document.title = "DSO @ "+this.dataIp.value;	// Update page title
 	this.dsoIP = this.dataIp.value;
+	this.dataSrc.selectedIndex = 1;			// Select DSO if IP addr.OK
       } else {				// ..Imitator
         this.dsoIP = '';		// Just reset device's IP
         document.title = "DSO demo";	// And page title
@@ -117,6 +118,8 @@
     init: function() {
       this.dataSrc = document.getElementById("dataSrcId");
       this.dataIp = document.getElementById("dataIpId");
+      this.dataSrc.selectedIndex = "0";
+      this.dataIp.value = this.dsoIP;
     }
   };
   
