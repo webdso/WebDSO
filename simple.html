@@ -176,7 +176,7 @@
     chanCols: ["E69F00","56B4E9",	// RGB channels colors
                "9400D3","009E73"],
     defCol: "4f4f4f",			// Default color: ext.triggger,etc. 
-    chanSel: null,			// Channel selector
+    chanSel: null,			// Channel picklist Id
     couplig: 'AC',			// Channel input
     chanRang: null,			// Channel vert.range
     chanScal: null,			// Channel vert.scal (linked with range)
@@ -195,6 +195,9 @@
       this.coupling = document.getElementById("chanCoupId").value;
       document.getElementById("trigId").selectedIndex = "0"; // Trig.by 1st chan.
     },
+    chanSet: function(chanNo) {
+      runCmd("statReq","cn",chanNo);
+    },					// -- chanSet --
     coupSet: function(coup) {		// Set channel's coupling
       this.coupling = coup
       runCmd("Coupling","val",coup,"cn",this.chanSel.value);
@@ -226,7 +229,7 @@
       this.chanScal = vScal;
       runCmd("VertScale",'val',this.chanScal,"cn",chanNo);
     },
-    shoCnColor: function(areaId,chanNo) {
+    shoCnColor: function(areaId,chanNo) {  // Color passed HTML area to chan.color
       var color;
       if ((chanNo > 0) && 
           (chanNo <= this.chanCols.length)) { color = this.chanCols[chanNo-1]; }
@@ -369,8 +372,10 @@
  
   /*
    * runCmd - send to the instrument one of predefined modes with two optional
-   *	      "&parName=param" pairs - not very neat, use "arguments"
-   *	      function to make it better.
+   *	      "&parName=param" pairs (not very neat, use "arguments" function),
+   *	      If in return we get "cs()" function (that is,server ran Gnuplot),
+   *	      then run it, if we get dsoStatus() function, then parse it and 
+   *	      update HTML page areas.
    */
   function runCmd(mode,parName,param,parName1,param1) {
     param = (typeof(parName) !== 'undefined')? "&"+parName+"=" + param : "";
@@ -496,18 +501,15 @@
   <p><p>			<!-- DSO horiz. controls -->
   <span title="Oscilloscope channel to display">
   <span id="chanColorId"><B>Channel:</B>&nbsp;</span><select id="chanSelId"
-                 onChange="dsoData.shoCnColor('chanColorId',this.value);">
-    <option value="1" selected>&nbsp;1&nbsp;</option>
-    <option value="2">&nbsp;2&nbsp;</option>
-    <option value="3">&nbsp;3&nbsp;</option>
-    <option value="4">&nbsp;4&nbsp;</option>
-<!--    <option value="1,E69F00" selected>&nbsp;1&nbsp;</option>
-    <option value="2,56B4E9">&nbsp;2&nbsp;</option>
-    <option value="3,9400D3">&nbsp;3&nbsp;</option>
-    <option value="4,009E73">&nbsp;4&nbsp;</option> -->
+		 onChange="dsoData.chanSet(this.value);">
+<!--                 onChange="dsoData.shoCnColor('chanColorId',this.value);"> -->
+      <option value="1" selected>&nbsp;1&nbsp;</option>
+      <option value="2">&nbsp;2&nbsp;</option>
+      <option value="3">&nbsp;3&nbsp;</option>
+      <option value="4">&nbsp;4&nbsp;</option>
     </select>
   </span>&nbsp;&nbsp;&nbsp;
-  <span title="Oscilloscope input coupling: &cong; - AC/DC or &asymp; - just AC">  
+  <span title="Selected channel input coupling: &cong; - AC/DC or &asymp; - just AC">  
   Input:&nbsp;<select id="chanCoupId" 
 	       onChange="dsoData.coupSet(this.value)"
 	       onClick="dsoData.coupSet(this.value)">
@@ -524,7 +526,7 @@
 		    <option value="RIGH">Right</option>
 		    </select>
   </span>&nbsp;&nbsp;&nbsp;
-  <span title="Waveform points to read with :WAV:DATA? query">
+  <span title="Waveform points to read (:WAV:DATA? query)">
   Wave points:&nbsp;<select id="wavPointsId"
   		     onChange="dsoData.pointsSet(this.value);">
     <option value="100">100</option>
@@ -569,14 +571,14 @@
                 </select>
   </span>
   <p><p>
-  <span title="Vertical range, Volts">
+  <span title="Selected channel vertical range, Volts">
   Vert.range:&nbsp;<input id="chanRangId" type="text" value="" 
 		    onKeypress="isEnterKey(event) &&
 			        dsoData.vRangeSet(this.value,dsoData.chanSel.value);"
 		    onBlur="dsoData.vRangeSet(this.value,dsoData.chanSel.value);"
 		    size="6" maxlength="6">&nbsp;V
   </span>&nbsp;&nbsp;&nbsp;
-  <span title="Vertical scale, Volts per division">
+  <span title="Selected channel vertical scale, Volts per division">
   Vert.scale:&nbsp;<input id="chanScalId"  type="text" value="" 
 		    onKeypress="isEnterKey(event) &&
 			        dsoData.vScaleSet(this.value,dsoData.chanSel.value);"

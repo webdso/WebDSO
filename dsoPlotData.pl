@@ -58,7 +58,7 @@ my(%query);				# URL parameters
 my($ip) = 'UNDEFINED';			# Default instrument's IP
 my($cmd) = '';				# Command to send to vxi11_cmd
 my($sec, $usec);			# Current second and microsecond
-my($dsoReply);				# What we return to calling page
+my($dsoReply) = '';			# What we get from DSO and return to calling page
 my($plotW,$plotH) = (800,600);		# Plot width/height and defaults
 my($wP) = 500;				# Default WAVe:POINts for DSO
 my($chan,$color) = (1,'ff0000');	# Default channel and color code
@@ -128,7 +128,10 @@ if ($query{'mode'} eq 'Plot') {
 } elsif ($query{'mode'} eq 'Reset') {		# *RST the scope
   $dsoReply = DsoStatus($ip,DevIO($ip,"*RST"));
 } elsif ($query{'mode'} eq 'statReq') {		# Status request, return scope settings
-  $dsoReply = DsoStatus($ip,'');
+  if (exists($query{'cn'})) {		# Set channel if required
+    $dsoReply = DevIO($ip,":WAV:SOUR CHAN$chan;");
+  }
+  $dsoReply = DsoStatus($ip,$dsoReply);	# Get scope status
 } else {
   ChkErr(1,'Invalid mode "'.$query{'mode'}.'", check script parameters');
 }
@@ -183,7 +186,7 @@ sub RunPlot {
     return( RunCmd("LANG='en_US.UTF-8' ".GNUPLOT." -e \"$cmd\"") );
   }
   $timeout = DevIO($ip,":TIM:RANG?");	# Get acquisition time and adjust timeout
-  chomp($timRange);
+  chomp($timeout);
   $timeout = int($timeout+SOCK_TMO);	
   $cmd = ":WAV:SOUR CHAN$cn; ".
 #        ":WAV:POIN $pt; ". 
