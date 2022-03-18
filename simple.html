@@ -147,6 +147,7 @@
       this.plotW.value = this.w; this.plotH.value = this.h;
       this.cs = document.getElementById("cs");
       this.cs.addEventListener("mousedown",this.mouseDn,true);
+      this.cs.addEventListener("mousemove",mouse.getMousePos,true);
     },
     mouseDn: function(eve) {		// Ignore mouse clicks if plot is running
       if (dataLoopRun) eve.stopImmediatePropagation();
@@ -168,6 +169,22 @@
       this.cs.height = this.h;		// Resize canvas
       this.mkBorder();
     }    
+  }
+  
+  var mouse = {				// Data to display csosshair on canvas
+    x: 0,				// Current position
+    y: 0,
+    getMousePos: function(e) {
+      var ev = e || window.event; 	//Moz || IE
+      if (ev.pageX) { 			//Moz
+        this.x = ev.pageX + window.pageXOffset;
+        this.y = ev.pageY + window.pageYOffset;
+      } else if (ev.clientX) { 		//IE
+        this.x = ev.clientX + document.body.scrollLeft;
+        this.y = ev.clientY + document.body.scrollTop;
+      }
+//      console.log("Mouse: "+this.x+", "+this.y);
+    }
   }
   
   var dsoData = {			// DSO control data and methods
