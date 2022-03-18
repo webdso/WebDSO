@@ -383,7 +383,10 @@
     }
     document.getElementById("stopDtLoopId").innerHTML = dataLoopRun ? "Stop" : "Run";
     document.getElementById("singleDtLoopId").disabled = dataLoopRun ? 1 : 0;
-    plotSize.cs.style.cursor = dataLoopRun ?  "progress" : "crosshair";
+    document.getElementById("gnuplot_textzoom_icon").disabled = dataLoopRun ? 1 : 0;
+    document.getElementById("gnuplot_rezoom_icon").disabled = dataLoopRun ? 1 : 0;
+    document.getElementById("gnuplot_unzoom_icon").disabled = dataLoopRun ? 1 : 0;
+   plotSize.cs.style.cursor = dataLoopRun ?  "progress" : "crosshair";
   }					// --- switchDataLoop() ---
  
  
