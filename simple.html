@@ -147,12 +147,11 @@
       this.plotW.value = this.w; this.plotH.value = this.h;
       this.cs = document.getElementById("cs");
       this.cs.addEventListener("mousedown",this.mouseDn,true);
-      this.cs.addEventListener("mousemove",mouse.getMousePos,true);
     },
     mouseDn: function(eve) {		// Ignore mouse clicks if plot is running
       if (dataLoopRun) eve.stopImmediatePropagation();
     },
-    mkBorder: function(draw) {		// Draw/cleanup border over inactive plot
+    mkBorder: function() {		// Draw/cleanup border over inactive plot
       this.cs.style.border = dataLoopRun ? 'none' : '1px dotted grey';
     },
     setW: function(newW) {
@@ -171,9 +170,55 @@
     }    
   }
   
-  var mouse = {				// Data to display csosshair on canvas
-    x: 0,				// Current position
+  /* 
+   * crossHairs - methods to display crossed lines over mouse tip when the
+   * 		  mouse is over designated area.
+   *
+   * Methods: init(areaId,horizId,vertId) - initialize crosshairs. "init()" method
+   *		expects HTML id's of the target area and two "<div>"s representing 
+   *		horizontal and vertical lines. See HTML elements with "cs", 
+   *		"hAxId" and "vAxId" id's somewhere in the HTML code. This method 
+   *		adds "mousemove" and "mouseleave" events listeners to "areaId" 
+   *		target area. After init() call, a browser will draw crosshairs 
+   *		whenever mouse enters areaId area;
+   *	       showCross(mouseEvent) - display crosshairs at coordinates given
+   *		with "mouseEvent" event. Coordinates have to be within target
+   *		area;
+   *	       hideCross() - hide crosshairs. They re-appears on mouse move.
+   *
+   * NOTE: 1. "hAxId" and "vAxId" lines are "<div>"s of 1 px height and width. Just
+   *	      left (or top) borders must be visible, others must be "none". 
+   *	      "z-index" of both elements has to be -1 to put the axis "below" target
+   *	      area - otherwise the thing won't work!
+   *	   2. showCross(event) function works as event handler and therefore keyword
+   *	      "this" in the body of the function refers to passed event and not 
+   *	      "crossHairs" parent object. To use "this" in a normal manner, "bind()"
+   *	      call is used to attach the handler to mousemove event (see init() 
+   *	      below). If for some browse rejects "bind()" calls, remove 
+   *	      ".bind(crossHairs)" clause in addEventListener() calls in init() AND 
+   *	      replace "this." with "crossHairs." in showCross() body.
+   */
+  var crossHairs = {			// The stuff to display csosshair on canvas
+    x: 0,				// Mouse current position
     y: 0,
+    target: null,			// Target (crosshair'ed) object
+    hAx: null,				// Horizontal axis id
+    vAx: null,				// Vertical axis id
+    init: function(targetId,horizId,vertId) {
+      this.target = document.getElementById(targetId);
+      this.hAx = document.getElementById(horizId);
+      this.vAx = document.getElementById(vertId);
+      this.target.addEventListener("mousemove",this.showCross.bind(crossHairs),true);
+      this.target.addEventListener("mouseleave",this.hideCross.bind(crossHairs),true);
+   },					// -- init --
+    showCross: function(e) {		// Get coord's and show crosshairs
+      this.getMousePos(e);		// Store mouse pos.in (x,y)
+      this.drawHairs();			// Show crosshairs 
+    },					// -- showCross --
+    hideCross: function() {		// Hide crosshairs
+      this.hAx.style.visibility="hidden";
+      this.vAx.style.visibility="hidden";
+    },					// -- hideCross --
     getMousePos: function(e) {
       var ev = e || window.event; 	//Moz || IE
       if (ev.pageX) { 			//Moz
@@ -184,8 +229,19 @@
         this.y = ev.clientY + document.body.scrollTop;
       }
 //      console.log("Mouse: "+this.x+", "+this.y);
-    }
-  }
+    },					// -- getMousePos --
+    drawHairs: function() {		// Display crosshairs at (x,y)
+      this.vAx.style.left = this.x+'px';
+      this.vAx.style.top = this.target.offsetTop + 'px';
+      this.vAx.style.height = this.target.offsetHeight + 'px';
+      this.vAx.style.visibility="visible";
+
+      this.hAx.style.left = this.target.offsetLeft+'px';
+      this.hAx.style.top = this.y + 'px';
+      this.hAx.style.width = this.target.offsetWidth + 'px';
+      this.hAx.style.visibility="visible";
+    }					// -- drawHairs --
+  }					// --- crossHairs ---
   
   var dsoData = {			// DSO control data and methods
     wavPoints: 250,			// Iintial no.points
@@ -294,6 +350,7 @@
     srcCtl.init();
     plotSize.init();
     dsoData.init();
+    crossHairs.init('cs','hAxId','vAxId');
     dataRefresh.init();
 //    gnuplot.init(); Don't need it for canvas generated with "name canvNam"
   }					// --- initPage ---
@@ -480,6 +537,17 @@
           style="display: block; margin: auto; cursor: crosshair;">
     <div id="err_msg">No support for HTML 5 canvas element</div>
   </canvas>
+
+  <!-- Axis to display when mouse is over canvas. Vertical one -->    
+  <div id="vAxId" style="width:1px; height: 1px; z-index: -1;
+		         border-left: 1px dashed red; border-right: none; 
+		         position: absolute;">
+  </div>
+  <!-- Horizontal axis -->
+  <div id="hAxId" style="width:1px; height: 1px; z-index: -1;
+		         border-top: 1px dashed red; border-bottom: none; 
+		         position: absolute;">
+  </div>
   
   <center>
   <p><p>
