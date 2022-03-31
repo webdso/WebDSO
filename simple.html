@@ -147,6 +147,21 @@
       this.plotW.value = this.w; this.plotH.value = this.h;
       this.cs = document.getElementById("cs");
       this.cs.addEventListener("mousedown",this.mouseDn,true);
+      this.cs.addEventListener("mousemove",this.passEvent,false);  // Pass these two
+      this.cs.addEventListener("mouseleave",this.passEvent,false); // events to underlaying div
+      plotArea = document.getElementById("plotAreaId");		   // Crosshairs area
+      plotArea.style.top = (this.cs.offsetTop+10.0)+"px";          // Adjust size and 
+      plotArea.style.left = (this.cs.offsetLeft+61.0)+"px";        // position to fit
+      plotArea.style.height = (this.cs.offsetHeight-43)+"px";      // plot area
+      plotArea.style.width = (this.cs.offsetWidth-86)+"px";
+      plotArea.addEventListener("mouseleave",crossHairs.hideCross,true);  // This never works
+    },
+    passEvent: function(eve) {		// Clone mouse event and send to crosshairs div
+      var crossArea = document.getElementById("plotAreaId");
+      var ev = new Event(eve.type);	// Createevent of the source type
+      ev.pageX = eve.pageX; ev.pageY = eve.pageY;	// Copy mouse coord's
+      ev.clientX = eve.clientX; ev.clientY = eve.clientY;
+      crossArea.dispatchEvent(ev);	// Send event to crosshairs
     },
     mouseDn: function(eve) {		// Ignore mouse clicks if plot is running
       if (dataLoopRun) eve.stopImmediatePropagation();
@@ -350,7 +365,7 @@
     srcCtl.init();
     plotSize.init();
     dsoData.init();
-    crossHairs.init('cs','hAxId','vAxId');
+    crossHairs.init('plotAreaId','hAxId','vAxId');
     dataRefresh.init();
 //    gnuplot.init(); Don't need it for canvas generated with "name canvNam"
   }					// --- initPage ---
@@ -532,18 +547,44 @@
        "style" below is used just because CSS is "cool". To avoid middle and
        right clicks on the canvas being intercepted by the browser, we shutdown
        "oncontextmenu" event. CSS element "pointer-events: none;" blocks any mouse
-       interaction with the canvas and *restore default* mouse behavior. -->
+       interaction with the canvas and *restores default* mouse behavior. -->
   <canvas id="cs" width=800 height=600 oncontextmenu="return false;" 
           style="display: block; margin: auto; cursor: crosshair;">
     <div id="err_msg">No support for HTML 5 canvas element</div>
   </canvas>
 
-  <!-- Axis to display when mouse is over canvas. Vertical one -->    
+  <!-- Crosshairs lines over the canvas above (lines are defined with 
+       crossHairs.init("cs","hAxId","vAxId"); call) work great, but the lines are
+       exactly of the canvas' size and go beyond plot area - although this is 
+       acceptable, but doesn't look great. To tackle the problem we add a separate 
+       smaller <div> under the canvas and set it to the size and position of the plot.
+       When the canvas gets initialized, plotSize.init() call adjusts <div> 
+       position and size based on the current canvas placement, then
+       crossHairs.init() call gets this <div> id and crosshairs are of the size and
+       position of the plot area. However the <div> is below the canvas and the 
+       canvas intercepts all mouse events and the <div> does not see mouse 
+       movements. When the <div> is placed above the canvas, it does not allow the
+       canvas to get mouse events - crosshairs work great, but we cannot interact 
+       with the plot.
+       
+       To solve the problem the canvas catches "mosemove" and "mouseleave" events
+       and translates them to crosshairs <div> with plotSize.passEvent() function.
+       This twist works well: the plot interacts with mouse, crosshairs are
+       within plot area. Now the problem is, "mouseleave" event fires when
+       mouse leaves the canvas (and not the smaller plot area) and crosshairs
+       are still displayed outside the plot. See plotSize object code (above)
+       for the source.
+  -->
+  
+  <div id="plotAreaId" style="width: 1px; height: 1px; z-index: -1;
+			      position: absolute;
+			      border: 1px solid red;"></div>
+  
+  <!-- Axis to display when mouse is over canvas. Vertical and horizontal ones -->    
   <div id="vAxId" style="width:1px; height: 1px; z-index: -1;
 		         border-left: 1px dashed red; border-right: none; 
 		         position: absolute;">
   </div>
-  <!-- Horizontal axis -->
   <div id="hAxId" style="width:1px; height: 1px; z-index: -1;
 		         border-top: 1px dashed red; border-bottom: none; 
 		         position: absolute;">
