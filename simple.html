@@ -154,7 +154,6 @@
       plotArea.style.left = (this.cs.offsetLeft+61.0)+"px";        // position to fit
       plotArea.style.height = (this.cs.offsetHeight-43)+"px";      // plot area
       plotArea.style.width = (this.cs.offsetWidth-86)+"px";
-      plotArea.addEventListener("mouseleave",crossHairs.hideCross,true);  // This never works
     },
     passEvent: function(eve) {		// Clone mouse event and send to crosshairs div
       var crossArea = document.getElementById("plotAreaId");
@@ -186,32 +185,37 @@
   }
   
   /* 
-   * crossHairs - methods to display crossed lines over mouse tip when the
-   * 		  mouse is over designated area.
+   * crossHairs - display fine crossed lines over mouse tip when the mouse is 
+   * 		  over designated area.
    *
    * Methods: init(areaId,horizId,vertId) - initialize crosshairs. "init()" method
    *		expects HTML id's of the target area and two "<div>"s representing 
    *		horizontal and vertical lines. See HTML elements with "cs", 
-   *		"hAxId" and "vAxId" id's somewhere in the HTML code. This method 
+   *		"hAxId" and "vAxId" id's somewhere in the HTML code. "init()" 
    *		adds "mousemove" and "mouseleave" events listeners to "areaId" 
    *		target area. After init() call, a browser will draw crosshairs 
    *		whenever mouse enters areaId area;
-   *	       showCross(mouseEvent) - display crosshairs at coordinates given
+   *	      showCross(mouseEvent) - display crosshairs at coordinates given
    *		with "mouseEvent" event. Coordinates have to be within target
-   *		area;
-   *	       hideCross() - hide crosshairs. They re-appears on mouse move.
+   *		area. Usually there is no need to call this method;
+   *	      hideCross() - hide crosshairs. They re-appears when mouse moves within
+   *		the target area. This method and event handler are optional since
+   *		init() configures showCross() handler to process mouse events and
+   *		the former constantly checks current mouse position and hides the 
+   *		cross when the mouse gets outside the target area.
    *
-   * NOTE: 1. "hAxId" and "vAxId" lines are "<div>"s of 1 px height and width. Just
-   *	      left (or top) borders must be visible, others must be "none". 
-   *	      "z-index" of both elements has to be -1 to put the axis "below" target
-   *	      area - otherwise the thing won't work!
+   * NOTE: 1. "hAxId" and "vAxId" lines are 1x1 px "<div>"s. Only left (or top)
+   *	      borders must be visible, other three must be "none" (but one might
+   *	      experiment with thicker "<div>"s, borders, colors, etc.. "z-index" 
+   *	      of both "div"s must be -1 to put the axis "under" target area - 
+   *	      otherwise the thing won't work!
    *	   2. showCross(event) function works as event handler and therefore keyword
    *	      "this" in the body of the function refers to passed event and not 
-   *	      "crossHairs" parent object. To use "this" in a normal manner, "bind()"
-   *	      call is used to attach the handler to mousemove event (see init() 
-   *	      below). If for some browse rejects "bind()" calls, remove 
-   *	      ".bind(crossHairs)" clause in addEventListener() calls in init() AND 
-   *	      replace "this." with "crossHairs." in showCross() body.
+   *	      enclosing "crossHairs" object. To use "this" in a normal manner,
+   *	      showCross(event) handler must be attached to mousemove event with
+   *	      "bind()" call (see init() below). If some browser doesn't support
+   *	      "bind()", remove ".bind(crossHairs)" clause in addEventListener() 
+   *	      calls in init() AND replace "this." with "crossHairs." in showCross().
    */
   var crossHairs = {			// The stuff to display csosshair on canvas
     x: 0,				// Mouse current position
@@ -228,8 +232,16 @@
    },					// -- init --
     showCross: function(e) {		// Get coord's and show crosshairs
       this.getMousePos(e);		// Store mouse pos.in (x,y)
-      this.drawHairs();			// Show crosshairs 
+      if (this.inArea(e)) this.drawHairs()
+      else this.hideCross();
     },					// -- showCross --
+    inArea: function(e) {		// Returns true if current pos.within event area
+      if ((this.x > e.target.offsetLeft) &&
+          (this.x < e.target.offsetWidth + e.target.offsetLeft) &&
+          (this.y > e.target.offsetTop) &&
+          (this.y < e.target.offsetHeight + e.target.offsetTop)) return true;
+      return false;
+    },
     hideCross: function() {		// Hide crosshairs
       this.hAx.style.visibility="hidden";
       this.vAx.style.visibility="hidden";
@@ -553,32 +565,35 @@
     <div id="err_msg">No support for HTML 5 canvas element</div>
   </canvas>
 
-  <!-- Crosshairs lines over the canvas above (lines are defined with 
-       crossHairs.init("cs","hAxId","vAxId"); call) work great, but the lines are
-       exactly of the canvas' size and go beyond plot area - although this is 
+  <!-- Crosshairs lines over above canvas (they are defined with 
+       crossHairs.init("cs","hAxId","valid"); call) work great, but the lines are
+       exactly of the canvas' size and are visible beyond plot area - this is 
        acceptable, but doesn't look great. To tackle the problem we add a separate 
        smaller <div> under the canvas and set it to the size and position of the plot.
        When the canvas gets initialized, plotSize.init() call adjusts <div> 
-       position and size based on the current canvas placement, then
+       position and size based on the current canvas coordinates, then
        crossHairs.init() call gets this <div> id and crosshairs are of the size and
-       position of the plot area. However the <div> is below the canvas and the 
+       position of the plot area. However the <div> sits below the canvas, the 
        canvas intercepts all mouse events and the <div> does not see mouse 
        movements. When the <div> is placed above the canvas, it does not allow the
        canvas to get mouse events - crosshairs work great, but we cannot interact 
        with the plot.
        
-       To solve the problem the canvas catches "mosemove" and "mouseleave" events
+       To solve the problem the canvas catches "mousemove" and "mouseleave" events
        and translates them to crosshairs <div> with plotSize.passEvent() function.
-       This twist works well: the plot interacts with mouse, crosshairs are
-       within plot area. Now the problem is, "mouseleave" event fires when
+       This twist works well: the plot interacts with the mouse, crosshairs are
+       right within plot area. Now the problem is, "mouseleave" event fires when
        mouse leaves the canvas (and not the smaller plot area) and crosshairs
-       are still displayed outside the plot. See plotSize object code (above)
-       for the source.
+       are still displayed outside the plot. This problem was solved by adding
+       constant mouse coordinates check to see if they are within the plot area. 
+       Once any coordinate leaves plot area, the crosshairs drawing program runs 
+       crossHairs.hideCross() method to hide the cross. See plotSize object code
+       (above) for the source.
   -->
   
   <div id="plotAreaId" style="width: 1px; height: 1px; z-index: -1;
 			      position: absolute;
-			      border: 1px solid red;"></div>
+			      border: 1px dotted red;"></div>
   
   <!-- Axis to display when mouse is over canvas. Vertical and horizontal ones -->    
   <div id="vAxId" style="width:1px; height: 1px; z-index: -1;
