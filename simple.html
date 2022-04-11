@@ -149,12 +149,15 @@
       this.cs.addEventListener("mousedown",this.mouseDn,true);
       this.cs.addEventListener("mousemove",this.passEvent,false);  // Pass these two
       this.cs.addEventListener("mouseleave",this.passEvent,false); // events to underlaying div
-      plotArea = document.getElementById("plotAreaId");		   // Crosshairs area
-      plotArea.style.top = (this.cs.offsetTop+10.0)+"px";          // Adjust size and 
-      plotArea.style.left = (this.cs.offsetLeft+61.0)+"px";        // position to fit
-      plotArea.style.height = (this.cs.offsetHeight-43)+"px";      // plot area
-      plotArea.style.width = (this.cs.offsetWidth-86)+"px";
+      this.adjustPLotArea();
     },
+    adjustPLotArea: function() {	// Adjust crosshairs area to reflect canvas
+      var plotArea = document.getElementById("plotAreaId");	// Crosshairs area
+      plotArea.style.top = (this.cs.offsetTop+10.0)+"px";     	// Adjust size and 
+      plotArea.style.left = (this.cs.offsetLeft+62.0)+"px";   	// position to fit
+      plotArea.style.height = (this.cs.offsetHeight-45)+"px";	// plot area. 
+      plotArea.style.width = (this.cs.offsetWidth-88)+"px"; 
+    },					// -- adjustPLotArea --
     passEvent: function(eve) {		// Clone mouse event and send to crosshairs div
       var crossArea = document.getElementById("plotAreaId");
       var ev = new Event(eve.type);	// Createevent of the source type
@@ -174,6 +177,7 @@
       this.w = Number(newW).toFixed();	// Width could be given as 1E+3
       this.cs.width = this.w;		// Resize canvas
       this.mkBorder();
+      this.adjustPLotArea();
     },
     setH: function(newH) {
       if (! goodNumber(newH,50,1000,"Invalid height: "+newH,
@@ -181,6 +185,7 @@
       this.h = Number(newH).toFixed(); 	// Height could be given as 1E+3
       this.cs.height = this.h;		// Resize canvas
       this.mkBorder();
+      this.adjustPLotArea();
     }    
   }
   
@@ -557,9 +562,13 @@
   <!-- When resizing canvas, don't forget to set new size in Gnuplot "set term" 
        command in backend script. Canvas is nicely centered with <center> tag,
        "style" below is used just because CSS is "cool". To avoid middle and
-       right clicks on the canvas being intercepted by the browser, we shutdown
+       right clicks on the canvas being intercepted by the browser, we ignore
        "oncontextmenu" event. CSS element "pointer-events: none;" blocks any mouse
-       interaction with the canvas and *restores default* mouse behavior. -->
+       interaction with the canvas and *restores default* mouse behavior.
+       
+       When the canvas gets resized don't forget to set size and offset of the
+       crosshairs <div> - see note below.
+       -->
   <canvas id="cs" width=800 height=600 oncontextmenu="return false;" 
           style="display: block; margin: auto; cursor: crosshair;">
     <div id="err_msg">No support for HTML 5 canvas element</div>
@@ -584,16 +593,25 @@
        This twist works well: the plot interacts with the mouse, crosshairs are
        right within plot area. Now the problem is, "mouseleave" event fires when
        mouse leaves the canvas (and not the smaller plot area) and crosshairs
-       are still displayed outside the plot. This problem was solved by adding
-       constant mouse coordinates check to see if they are within the plot area. 
-       Once any coordinate leaves plot area, the crosshairs drawing program runs 
-       crossHairs.hideCross() method to hide the cross. See plotSize object code
+       are still displayed outside the plot. This problem was solved by constantly
+       checking mouse coordinates to see if they are within the plot area. 
+       Once any coordinate leaves plot area, the crosshairs drawing program hides 
+       crosshairs with crossHairs.hideCross(). See plotSize object code
        (above) for the source.
+       
+       When the canvas gets resized (this is implemented with plotSize.setW() and
+       plotSize.setH() methods above) these methods call plotSize.adjustPLotArea()
+       which sets size and offset of the crosshairs <div>. plotSize.adjustPLotArea()
+       is also called when the canvas is initialized with plotSize.init(). The size 
+       and offset of the crosshairs <div> relative to the canvas were obtained
+       experimentally and (most likely) will get changed with new version of
+       gnuplot utility.
   -->
   
   <div id="plotAreaId" style="width: 1px; height: 1px; z-index: -1;
 			      position: absolute;
-			      border: 1px dotted red;"></div>
+			      border: none; /* Uncomment below for debugging */
+			      /* border: 1px dotted red; */"></div>
   
   <!-- Axis to display when mouse is over canvas. Vertical and horizontal ones -->    
   <div id="vAxId" style="width:1px; height: 1px; z-index: -1;
