@@ -171,22 +171,24 @@
     mkBorder: function() {		// Draw/cleanup border over inactive plot
       this.cs.style.border = dataLoopRun ? 'none' : '1px dotted grey';
     },
-    setW: function(newW) {
+    setW: function(newW) {		// Change plot width,run DSO to refresh the plot
       if (! goodNumber(newW,100,1600,"Invalid width: "+newW+". Allowed range: 100..1600",
 		       this.plotW)) return;
       this.w = Number(newW).toFixed();	// Width could be given as 1E+3
       this.cs.width = this.w;		// Resize canvas
-      this.mkBorder();
-      this.adjustPLotArea();
-    },
-    setH: function(newH) {
+      this.adjustPLotArea();		// Adjust crosshairs area to new width
+      if (! dataLoopRun) { switchDataLoop(1); }	// Make single run if DSO stopped
+//     this.mkBorder();				// Or draw border if no run desired
+    },    				// -- setW --
+    setH: function(newH) {		// Change plot height,run DSO to refresh the plot
       if (! goodNumber(newH,50,1000,"Invalid height: "+newH+". Allowed range: 50..1000",
 		       this.plotH)) return;
       this.h = Number(newH).toFixed(); 	// Height could be given as 1E+3
       this.cs.height = this.h;		// Resize canvas
-      this.mkBorder();
-      this.adjustPLotArea();
-    }    
+      this.adjustPLotArea();		// Adjust crosshairs area to new height
+      if (! dataLoopRun) { switchDataLoop(1); }	// Make single run if DSO stopped
+//    this.mkBorder();				// Or draw border if no run desired
+    }    				// -- setH --
   }
   
   /* 
@@ -642,13 +644,13 @@
   <p><p>
   <nobr>
   Plot size:&nbsp;<input type="text" id="plotWId" value=""
-  		   title="Plot area width"
+  		   title="Plot area width. Will make single run when changed"
   		   onKeypress="isEnterKey(event) && plotSize.setW(this.value);"
   		   onBlur="plotSize.setW(this.value);"
   		   size="4" maxlength="4">
   &times;
   <input type="text" id="plotHId" value=""
-  		   title="Plot area heigth"
+  		   title="Plot area heigth. Will make single run when changed"
   		   onKeypress="isEnterKey(event) && plotSize.setH(this.value);"
   		   onBlur="plotSize.setH(this.value);"
   		   size="4" maxlength="4">&nbsp;px
